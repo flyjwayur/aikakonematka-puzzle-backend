@@ -42,8 +42,8 @@
                                        {}
                                        (range util/row-col-num))]
     (ref-set sprites-state {:diagonal-flipped? false
-                            :row-flipped? non-flipped-row-or-col
-                            :col-flipped? non-flipped-row-or-col}))
+                            :row-flipped?      non-flipped-row-or-col
+                            :col-flipped?      non-flipped-row-or-col}))
   (util/randomly-execute-a-fn flip-diagonal-pieces!)
   (doseq [row-or-col (range util/row-col-num)]
     (util/randomly-execute-a-fn (fn [] (flip-row! row-or-col)))
