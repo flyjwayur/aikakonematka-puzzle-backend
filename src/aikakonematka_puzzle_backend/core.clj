@@ -2,6 +2,7 @@
   (:require [aikakonematka-puzzle-backend.util :as util]
             [compojure.core :refer (defroutes GET POST)]
             [cheshire.core :as json]
+            [environ.core :refer [env]]
             [java-time :as jt]
             [org.httpkit.server :as server]
             [ring.middleware.defaults :as defaults]
@@ -136,5 +137,6 @@
                       :access-control-allow-methods [:get :put :post :delete]
                       :access-control-allow-credentials ["true"])))
 
-(defn -main []
-  (server/run-server handler {:port 2222}))
+(defn -main [& [port]]
+  (let [port (Integer. (or port (env :port) 2222))]
+    (server/run-server handler {:port port :join? false})))
