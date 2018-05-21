@@ -12,4 +12,5 @@
                  [ring-cors "0.1.7"]]
   :main ^:skip-aot aikakonematka-puzzle-backend.core
   :uberjar-name "aikakone-backend-standalone.jar"
-  :min-lein-version "2.0.0")
+  :min-lein-version "2.0.0"
+  :profiles {:production {:env {:production true}}})
