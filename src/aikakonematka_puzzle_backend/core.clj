@@ -1,5 +1,5 @@
 (ns aikakonematka-puzzle-backend.core
-  (:require [aikakonematka-puzzle-backend.util :as util]
+  (:require [aikakonematka-puzzle-backend.game :as game]
             [compojure.core :refer (defroutes GET POST)]
             [cheshire.core :as json]
             [environ.core :refer [env]]
@@ -8,7 +8,8 @@
             [ring.middleware.defaults :as defaults]
             [ring.middleware.cors :as cors]
             [taoensso.sente :as sente]
-            [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]))
+            [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
+            [aikakonematka-puzzle-backend.util :as util]))
 
 (let [connection (sente/make-channel-socket! (get-sch-adapter)
                                              {:user-id-fn (fn [req] (get-in req [:params :client-id]))})]
@@ -27,27 +28,6 @@
 (def sending-time-future (ref nil))
 
 (def bgm-pitches (ref []))
-
-(defn flip-diagonal-pieces! []
-  (alter sprites-state update :diagonal-flipped? not))
-
-(defn flip-row! [row]
-  (alter sprites-state update-in [:row-flipped? row] not))
-
-(defn flip-col! [col]
-  (alter sprites-state update-in [:col-flipped? col] not))
-
-(defn- randomize-puzzle-pieces []
-  (let [non-flipped-row-or-col (reduce #(assoc %1 %2 false)
-                                       {}
-                                       (range util/row-col-num))]
-    (ref-set sprites-state {:diagonal-flipped? false
-                            :row-flipped?      non-flipped-row-or-col
-                            :col-flipped?      non-flipped-row-or-col}))
-  (util/randomly-execute-a-fn flip-diagonal-pieces!)
-  (doseq [row-or-col (range util/row-col-num)]
-    (util/randomly-execute-a-fn (fn [] (flip-row! row-or-col)))
-    (util/randomly-execute-a-fn (fn [] (flip-col! row-or-col)))))
 
 (defn- convert-to-millis [seconds nanos]
   (+ (* 1000 seconds) (/ nanos 1000000)))
@@ -71,10 +51,10 @@
 
 (defmulti event-msg-handler :id)
 
-(defmethod event-msg-handler :default [{:as ev-msg :keys [event]}]
+(defmethod event-msg-handler :default [{:keys [event]}]
   (println "Unhandled event: " event))
 
-(defmethod event-msg-handler :aikakone/sprites-state [{:as ev-msg :keys [client-id ?data]}]
+(defmethod event-msg-handler :aikakone/sprites-state [{:keys [client-id ?data]}]
   ; To identify type of msg and handle them accordingly
   ; To have unique UUID for each client that matches the ID used by the :user-id-fn
   ; To broadcast the response to all the connected clients
@@ -85,15 +65,16 @@
 (defmethod event-msg-handler :aikakone/game-start [{:keys [client-id]}]
   (dosync
     (when (empty? @sprites-state)
-      (randomize-puzzle-pieces))
+      (while (not (util/check-game-challenging-enough? sprites-state))
+        (game/randomize-puzzle-pieces sprites-state)))
     (chsk-send! client-id [:aikakone/game-start @sprites-state])))
 
-(defmethod event-msg-handler :aikakone/start-timer [{:keys [?data]}]
+(defmethod event-msg-handler :aikakone/start-timer []
   (dosync
     (ref-set game-start-time (jt/local-date-time))
     (ref-set sending-time-future (start-sending-current-playtime!))))
 
-(defmethod event-msg-handler :aikakone/puzzle-complete! [{:keys [id client-id ?data]}]
+(defmethod event-msg-handler :aikakone/puzzle-complete! [{:keys [client-id ?data]}]
   (dosync
     (ref-set sprites-state nil)
     (ref-set bgm-pitches nil)
