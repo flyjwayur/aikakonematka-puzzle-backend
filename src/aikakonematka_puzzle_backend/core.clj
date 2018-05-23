@@ -1,5 +1,5 @@
 (ns aikakonematka-puzzle-backend.core
-  (:require [aikakonematka-puzzle-backend.util :as util]
+  (:require [aikakonematka-puzzle-backend.game :as game]
             [compojure.core :refer (defroutes GET POST)]
             [cheshire.core :as json]
             [environ.core :refer [env]]
@@ -27,27 +27,6 @@
 (def sending-time-future (ref nil))
 
 (def bgm-pitches (ref []))
-
-(defn flip-diagonal-pieces! []
-  (alter sprites-state update :diagonal-flipped? not))
-
-(defn flip-row! [row]
-  (alter sprites-state update-in [:row-flipped? row] not))
-
-(defn flip-col! [col]
-  (alter sprites-state update-in [:col-flipped? col] not))
-
-(defn- randomize-puzzle-pieces []
-  (let [non-flipped-row-or-col (reduce #(assoc %1 %2 false)
-                                       {}
-                                       (range util/row-col-num))]
-    (ref-set sprites-state {:diagonal-flipped? false
-                            :row-flipped?      non-flipped-row-or-col
-                            :col-flipped?      non-flipped-row-or-col}))
-  (util/randomly-execute-a-fn flip-diagonal-pieces!)
-  (doseq [row-or-col (range util/row-col-num)]
-    (util/randomly-execute-a-fn (fn [] (flip-row! row-or-col)))
-    (util/randomly-execute-a-fn (fn [] (flip-col! row-or-col)))))
 
 (defn- convert-to-millis [seconds nanos]
   (+ (* 1000 seconds) (/ nanos 1000000)))
@@ -85,7 +64,8 @@
 (defmethod event-msg-handler :aikakone/game-start [{:keys [client-id]}]
   (dosync
     (when (empty? @sprites-state)
-      (randomize-puzzle-pieces))
+      (game/randomize-puzzle-pieces sprites-state))
+    (println ":gonna-initialize")
     (chsk-send! client-id [:aikakone/game-start @sprites-state])))
 
 (defmethod event-msg-handler :aikakone/start-timer [{:keys [?data]}]
