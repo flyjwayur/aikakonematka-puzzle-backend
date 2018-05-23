@@ -10,7 +10,7 @@
 (defn flip-col! [sprites-state col]
   (alter sprites-state update-in [:col-flipped? col] not))
 
-(defn- randomize-puzzle-pieces [sprites-state]
+(defn randomize-puzzle-pieces [sprites-state]
   (let [non-flipped-row-or-col (reduce #(assoc %1 %2 false)
                                        {}
                                        (range util/row-col-num))]
