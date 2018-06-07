@@ -11,13 +11,16 @@
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
             [aikakonematka-puzzle-backend.util :as util]))
 
-(let [connection (sente/make-channel-socket! (get-sch-adapter)
-                                             {:user-id-fn (fn [req] (get-in req [:params :client-id]))})]
-  (def ring-ajax-post (:ajax-post-fn connection))
-  (def ring-ajax-get-or-ws-handshake (:ajax-get-or-ws-handshake-fn connection))
-  (def ch-chsk (:ch-recv connection))
-  (def chsk-send! (:send-fn connection))
-  (def connected-uids (:connected-uids connection)))
+(let [{:keys [ch-recv send-fn connected-uids
+              ajax-post-fn ajax-get-or-ws-handshake-fn]}
+      (sente/make-channel-socket!
+        (get-sch-adapter)
+        {:user-id-fn (fn [req] (get-in req [:params :client-id]))})]
+  (def ring-ajax-post ajax-post-fn)
+  (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
+  (def ch-chsk ch-recv)
+  (def chsk-send! send-fn)
+  (def connected-uids connected-uids))
 
 (def sprites-state (ref nil))
 
@@ -69,7 +72,7 @@
         (game/randomize-puzzle-pieces sprites-state)))
     (chsk-send! client-id [:aikakone/game-start @sprites-state])))
 
-(defmethod event-msg-handler :aikakone/start-timer []
+(defmethod event-msg-handler :aikakone/start-timer [{:keys [client-id ?data]}]
   (dosync
     (ref-set game-start-time (jt/local-date-time))
     (ref-set sending-time-future (start-sending-current-playtime!))))
@@ -85,7 +88,7 @@
                        (take 10 (sort (conj ranking ?data))))))
     (broadcast-data-to-all-except-msg-sender client-id :aikakone/sprites-state {})))
 
-(defmethod event-msg-handler :aikakone/reset [{:keys [client-id]}]
+(defmethod event-msg-handler :aikakone/reset [{:keys [client-id ?data]}]
   (dosync
     (ref-set game-start-time nil)
     (ref-set sprites-state nil)
