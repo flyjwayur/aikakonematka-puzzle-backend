@@ -2,8 +2,11 @@
 
 (def row-col-num 6)
 
-(defn randomly-execute-a-fn [f]
-  (when (< (rand) 0.5) (f)))
+(defn randomly-execute-a-fn
+  ([f]
+   (randomly-execute-a-fn f 0.5))
+  ([f probability]
+   (when (< (rand) probability) (f))))
 
 (defn check-game-challenging-enough? [sprites-state]
   (let [{:keys [diagonal-flipped? row-flipped? col-flipped?]} @sprites-state
