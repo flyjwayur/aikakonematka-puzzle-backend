@@ -100,7 +100,6 @@
       (doseq [uid (:any @connected-uids)]
         (chsk-send! uid [:aikakone/music @bgm-pitches])))
 
-    :default
     (println "Unhandled event: " event)))
 
 (sente/start-chsk-router! ch-chsk handle-event-message!)        ; To initialize the router which uses core.async go-loop
