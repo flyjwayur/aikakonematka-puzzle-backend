@@ -17,7 +17,7 @@
     (ref-set sprites-state {:diagonal-flipped? false
                             :row-flipped?      non-flipped-row-or-col
                             :col-flipped?      non-flipped-row-or-col}))
-  (util/randomly-execute-a-fn (fn [] flip-diagonal-pieces! sprites-state))
+  (util/randomly-execute-a-fn (fn [] flip-diagonal-pieces! sprites-state) 0.9)
   (doseq [row-or-col (range util/row-col-num)]
     (util/randomly-execute-a-fn (fn [] (flip-row! sprites-state row-or-col)))
     (util/randomly-execute-a-fn (fn [] (flip-col! sprites-state row-or-col)))))
