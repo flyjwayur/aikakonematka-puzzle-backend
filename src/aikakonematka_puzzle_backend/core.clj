@@ -54,9 +54,6 @@
 
 (defmulti event-msg-handler :id)
 
-(defmethod event-msg-handler :default [{:keys [event]}]
-  (println "Unhandled event: " event))
-
 (defmethod event-msg-handler :aikakone/sprites-state [{:keys [client-id ?data]}]
   ; To identify type of msg and handle them accordingly
   ; To have unique UUID for each client that matches the ID used by the :user-id-fn
@@ -102,6 +99,9 @@
     (println "bgm-pitches : " @bgm-pitches)
     (doseq [uid (:any @connected-uids)]
       (chsk-send! uid [:aikakone/music @bgm-pitches]))))
+
+(defmethod event-msg-handler :default [{:keys [event]}]
+  (println "Unhandled event: " event))
 
 (sente/start-chsk-router! ch-chsk event-msg-handler)        ; To initialize the router which uses core.async go-loop
 ; to manage msg routing between clients
