@@ -109,6 +109,7 @@
 (defroutes app
            ;Make JSON with ranking data
            ;and open the link(localhost:2222/rankings for the clients
+           (GET "/health" req (json/generate-string {:health true}))
            (GET "/rankings" req (json/generate-string @ranking))
            (GET "/chsk" req (ring-ajax-get-or-ws-handshake req)) ; To update the routes with these two fns
            (POST "/chsk" req (ring-ajax-post req)))         ; to handle client requests.
